@@ -1,0 +1,83 @@
+//Where do I put the mongoose code. How do I run it?  
+//You place the Mongoose code in the same file as your Express application (server-side application). Below is a fully working Express application in one file that uses Mongoose to interact with a MongoDB database:
+
+//Server1.js
+
+const express = require('express');
+const mongoose = require('mongoose');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/bookdb', { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true,
+    useFindAndModify: false 
+}).then(() => {
+    console.log('Database connected');
+}).catch((err) => {
+    console.error('Database connection error: ', err);
+});
+
+// Define a Book model
+const BookSchema = new mongoose.Schema({
+    id: String,
+    title: String,
+    author: String
+});
+const Book = mongoose.model('Book', BookSchema);
+
+// Create an Express application
+const app = express();
+app.use(express.json());
+
+// Static middleware for serving static files
+app.use(express.static('public'));
+
+// Routes
+app.get('/', (req, res) => {
+    res.send('Hello, World!');
+});
+
+app.get('/books', (req, res) => {
+    Book.find().then(books => {
+        res.json(books);
+    });
+});
+
+app.post('/books', (req, res) => {
+    const book = new Book(req.body);
+    book.save().then(() => {
+        res.status(201).send(book);
+    });
+});
+
+app.put('/books/:id', (req, res) => {
+    const id = req.params.id;
+    const newBookData = req.body;
+
+    Book.findOneAndUpdate({ id: id }, newBookData).then(() => {
+        res.send('Book updated');
+    }).catch(err => {
+        res.status(404).send(err);
+    });
+});
+
+app.delete('/books/:id', (req, res) => {
+    const id = req.params.id;
+    Book.findOneAndRemove({ id: id }).then(() => {
+        res.send('Book deleted');
+    }).catch(err => {
+        res.status(404).send(err);
+    });
+});
+
+app.listen(3001, () => {
+    console.log('Server is running on port 3001');
+});
+
+
+//To run this application:  Save this file as server1.js.
+//Make sure MongoDB is installed and running on your machine.
+//Run the following command in your terminal to install necessary Node.js modules: npm install express mongoose
+//Finally, use the command node server1.js to run the application.
+//Once the application is running, it will listen for requests on port 3001 and will connect to the MongoDB database bookdb on your local machine. The database and collections will be created automatically when you add the first book. You can interact with the API using your HTML forms or any HTTP client like Postman or cURL.
+//Remember to replace 'mongodb://localhost:27017/bookdb' with the actual MongoDB connection string if your database is hosted somewhere else.
